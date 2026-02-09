@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/product_service.dart';
 import '../models/product.dart';
+import '../core/app_routes.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,20 +12,45 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _nameCtrl = TextEditingController();
-  final _priceCtrl = TextEditingController();
-  final _service = ProductService();
+  final _productService = ProductService();
 
-  void _addProduct() async {
-    final name = _nameCtrl.text.trim();
-    final price = double.tryParse(_priceCtrl.text.trim());
+  Future<void> _addDialog() async {
+    final nameCtrl = TextEditingController();
+    final priceCtrl = TextEditingController();
 
-    if (name.isEmpty || price == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Dodaj proizvod'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: 'Naziv'),
+            ),
+            TextField(
+              controller: priceCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Cena'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Otkaži')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sačuvaj')),
+        ],
+      ),
+    );
 
-    await _service.addProduct(name, price);
+    if (ok != true) return;
 
-    _nameCtrl.clear();
-    _priceCtrl.clear();
+    final name = nameCtrl.text.trim();
+    final price = double.tryParse(priceCtrl.text.replaceAll(',', '.')) ?? 0;
+
+    if (name.isEmpty || price <= 0) return;
+
+    await _productService.addProduct(name: name, price: price);
   }
 
   @override
@@ -34,82 +60,50 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('SmartMarket'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: _addDialog,
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await AuthService().signOut();
+              if (!mounted) return;
+              Navigator.pushReplacementNamed(context, AppRoutes.login);
             },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
+      body: StreamBuilder<List<Product>>(
+        stream: _productService.streamMyProducts(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(child: Text('Greška: ${snap.error}'));
+          }
+          final items = snap.data ?? [];
+          if (items.isEmpty) {
+            return const Center(child: Text('Nema proizvoda. Klikni + da dodaš.'));
+          }
+
+          return ListView.separated(
             padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Naziv proizvoda',
-                  ),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (_, i) {
+              final p = items[i];
+              return ListTile(
+                title: Text(p.name),
+                subtitle: Text('Cena: ${p.price.toStringAsFixed(2)}'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _productService.deleteProduct(p.id),
                 ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _priceCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Cena',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _addProduct,
-                    child: const Text('Dodaj proizvod'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Divider(),
-
-          Expanded(
-            child: StreamBuilder<List<Product>>(
-              stream: _service.getProducts(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final products = snapshot.data!;
-
-                if (products.isEmpty) {
-                  return const Center(child: Text('Nema proizvoda'));
-                }
-
-                return ListView.builder(
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-
-                    return ListTile(
-                      title: Text(product.name),
-                      subtitle: Text('${product.price} RSD'),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          _service.deleteProduct(product.id);
-                        },
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+              );
+            },
+          );
+        },
       ),
     );
   }
