@@ -11,16 +11,18 @@ class HomeScreen extends StatelessWidget {
         title: const Text('SmartMarket'),
         actions: [
           IconButton(
-            tooltip: 'Logout',
+            icon: const Icon(Icons.logout),
             onPressed: () async {
               await AuthService().signOut();
             },
-            icon: const Icon(Icons.logout),
           ),
         ],
       ),
       body: const Center(
-        child: Text('Ulogovan si ✅', style: TextStyle(fontSize: 22)),
+        child: Text(
+          'Ulogovan si ✅',
+          style: TextStyle(fontSize: 22),
+        ),
       ),
     );
   }
