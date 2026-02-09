@@ -1,3 +1,4 @@
+// lib/models/product.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Product {
@@ -12,17 +13,23 @@ class Product {
     required this.name,
     required this.price,
     required this.uid,
-    this.createdAt,
+    required this.createdAt,
   });
 
-  factory Product.fromDoc(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory Product.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data() ?? {};
+    final ts = data['createdAt'];
+
     return Product(
       id: doc.id,
-      name: (data['name'] ?? '') as String,
-      price: (data['price'] ?? 0).toDouble(),
-      uid: (data['uid'] ?? '') as String,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+      name: (data['name'] ?? '').toString(),
+      price: (data['price'] is int)
+          ? (data['price'] as int).toDouble()
+          : (data['price'] is double)
+              ? data['price'] as double
+              : double.tryParse((data['price'] ?? '0').toString()) ?? 0,
+      uid: (data['uid'] ?? '').toString(),
+      createdAt: ts is Timestamp ? ts.toDate() : null,
     );
   }
 

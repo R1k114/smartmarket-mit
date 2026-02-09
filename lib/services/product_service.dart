@@ -1,3 +1,4 @@
+// lib/services/product_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/product.dart';
@@ -6,32 +7,41 @@ class ProductService {
   final _db = FirebaseFirestore.instance;
   final _auth = FirebaseAuth.instance;
 
-  String get _uid => _auth.currentUser!.uid;
+  CollectionReference<Map<String, dynamic>> get _col =>
+      _db.collection('products');
 
-  Stream<List<Product>> streamMyProducts() {
-    return _db
-        .collection('products')
-        .where('uid', isEqualTo: _uid)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs.map((d) => Product.fromDoc(d)).toList());
+  String get _uid {
+    final u = _auth.currentUser;
+    if (u == null) throw Exception('Nisi ulogovan');
+    return u.uid;
   }
 
-  Future<void> addProduct({
-    required String name,
-    required double price,
-  }) async {
-    final product = Product(
-      id: '',
-      name: name,
-      price: price,
-      uid: _uid,
-    );
+  Future<void> addProduct(String name, double price) async {
+    await _col.add({
+      'name': name,
+      'price': price,
+      'uid': _uid,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
 
-    await _db.collection('products').add(product.toMap());
+  Stream<List<Product>> getProducts() {
+    final uid = _uid;
+    return _col
+        .where('uid', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map(Product.fromDoc).toList());
+  }
+
+  Future<void> updateProduct(String id, String name, double price) async {
+    await _col.doc(id).update({
+      'name': name,
+      'price': price,
+    });
   }
 
   Future<void> deleteProduct(String id) async {
-    await _db.collection('products').doc(id).delete();
+    await _col.doc(id).delete();
   }
 }
