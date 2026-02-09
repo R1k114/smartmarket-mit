@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'core/app_routes.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,15 +19,17 @@ class SmartMarketApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'SmartMarket',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true),
-      home: const Scaffold(
-        body: Center(
-          child: Text('SmartMarket', style: TextStyle(fontSize: 24)),
-        ),
-      ),
-    );
+   return MaterialApp(
+  title: 'SmartMarket',
+  debugShowCheckedModeBanner: false,
+  theme: ThemeData(useMaterial3: true),
+
+  initialRoute: AppRoutes.login,
+  routes: {
+    AppRoutes.login: (_) => const LoginScreen(),
+    AppRoutes.register: (_) => const RegisterScreen(),
+  },
+);
+
   }
 }
