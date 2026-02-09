@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_routes.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,6 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _obscure = true;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -21,12 +23,32 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Login UI OK (auth u sledećem commitu)')),
-    );
+    setState(() => _loading = true);
+    try {
+      await AuthService().signIn(
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text,
+      );
+
+      if (!mounted) return;
+
+      // Vrati na AuthGate (on će prikazati Home jer je user ulogovan)
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.gate,
+        (_) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Greška: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -72,13 +94,21 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _submit,
-                  child: const Text('Prijavi se'),
+                  onPressed: _loading ? null : _submit,
+                  child: _loading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Prijavi se'),
                 ),
               ),
               const SizedBox(height: 12),
               TextButton(
-                onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
+                onPressed: _loading
+                    ? null
+                    : () => Navigator.pushNamed(context, AppRoutes.register),
                 child: const Text('Nemam nalog → Registruj se'),
               ),
             ],
