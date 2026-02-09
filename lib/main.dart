@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'firebase_options.dart';
+import 'core/app_routes.dart';
 import 'screens/auth_gate.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/guest_screen.dart';
+import 'screens/admin_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +27,16 @@ class SmartMarketApp extends StatelessWidget {
       title: 'SmartMarket',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true),
-      home: const AuthGate(),
+
+      initialRoute: AppRoutes.gate,
+      routes: {
+        AppRoutes.gate: (_) => const AuthGate(),
+        AppRoutes.guest: (_) => const GuestScreen(),
+        AppRoutes.login: (_) => const LoginScreen(),
+        AppRoutes.register: (_) => const RegisterScreen(),
+        AppRoutes.home: (_) => const HomeScreen(),
+        AppRoutes.admin: (_) => const AdminScreen(),
+      },
     );
   }
 }

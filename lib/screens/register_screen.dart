@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_routes.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -30,19 +31,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _loading = true);
     try {
-      await AuthService().register(
+      final cred = await AuthService().register(
         email: _emailCtrl.text.trim(),
         password: _passCtrl.text,
       );
 
-      if (!mounted) return;
-
-      // Vrati na AuthGate (on će prikazati Home jer je user ulogovan)
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.gate,
-        (_) => false,
+      // kreiraj users/{uid} sa role=user
+      await UserService().ensureUserDoc(
+        uid: cred.user!.uid,
+        email: cred.user!.email ?? _emailCtrl.text.trim(),
       );
+
+      // AuthGate će odraditi routing
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.gate, (_) => false);
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
