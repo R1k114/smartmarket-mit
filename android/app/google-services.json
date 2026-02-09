@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "165997945375",
+    "project_id": "smartmarket-e2148",
+    "storage_bucket": "smartmarket-e2148.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:165997945375:android:071c279456a195623fab2a",
+        "android_client_info": {
+          "package_name": "com.example.smartmarket"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDToIW7g-C1hVbxqA1-uNfr9Q6uh4quZc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
